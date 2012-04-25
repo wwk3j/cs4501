@@ -52,13 +52,27 @@ if ($user_id) {
     }
   }
 
+  //I added this to be a boolean to manage if we are on a reading page or not.
+  if (isset($_GET['read'])) {
+      $reading = true;
+} else {
+  $reading = false;
+  }
+
+  //I added this to be a boolean to manage if we are on the submission page or not.
+  if (isset($_GET['submit'])) {
+      $submitting = true;
+} else {
+  $submitting = false;
+  }
+
   // This fetches some things that you like . 'limit=*" only returns * values.
   // To see the format of the data you are retrieving, use the "Graph API
   // Explorer" which is at https://developers.facebook.com/tools/explorer/
   $likes = idx($facebook->api('/me/likes?limit=4'), 'data', array());
 
   // This fetches 4 of your friends.
-  $friends = idx($facebook->api('/me/friends?limit=4'), 'data', array());
+  $friends = idx($facebook->api('/me/friends?limit=8'), 'data', array());
 
   // And this returns 16 of your photos.
   $photos = idx($facebook->api('/me/photos?limit=16'), 'data', array());
@@ -69,6 +83,8 @@ if ($user_id) {
     'method' => 'fql.query',
     'query' => 'SELECT uid, name FROM user WHERE uid IN(SELECT uid2 FROM friend WHERE uid1 = me()) AND is_app_user = 1'
   ));
+
+  // We will need to make variables like the ones above to gather our data from our database
 }
 
 // Fetch the basic info of the app that they are using
@@ -211,14 +227,13 @@ $app_name = idx($app_info, 'name', '');
       <p id="picture" style="background-image: url(https://graph.facebook.com/<?php echo he($user_id); ?>/picture?type=normal)"></p>
 
       <div>
-        <h1>Welcome, <strong><?php echo he(idx($basic, 'name')); ?></strong></h1>
+        <h1>Welcome to <a href="https://severe-fire-3252.herokuapp.com/">LitShare</a>, <strong><?php echo he(idx($basic, 'name')); ?></strong></h1>
         <p class="tagline">
-          This is your app
-          <a href="<?php echo he(idx($app_info, 'link'));?>" target="_top"><?php echo he($app_name); ?></a>
+          An app by Wing Kuang and Nick Kish.
         </p>
 
         <div id="share-app">
-          <p>Share your app:</p>
+          <p>Share our app:</p>
           <ul>
             <li>
               <a href="#" class="facebook-button" id="postToWall" data-url="<?php echo AppInfo::getUrl(); ?>">
@@ -240,27 +255,177 @@ $app_name = idx($app_info, 'name', '');
       </div>
       <?php } else { ?>
       <div>
-        <h1>Welcome</h1>
+        <h1>Welcome to <a href="https://severe-fire-3252.herokuapp.com/">LitShare</a>, please log in.</h1>
         <div class="fb-login-button" data-scope="user_likes,user_photos"></div>
       </div>
       <?php } ?>
     </header>
 
-    <section id="get-started">
-      <p>Whatever</p>
-      <a href="https://devcenter.heroku.com/articles/facebook" target="_top" class="button">Learn How to Edit This App</a>
-    </section>
-
+    <!-- Starts the information that is shown when a user is logged in -->
     <?php
       if ($user_id) {
     ?>
+        <!-- If the user has selected a story, then said story will be displayed via the code bellow -->
+        <?php
+        if ($reading){
+        ?>
+        <section id="get-started">
+            <p>Misc. Story by Misc. Author</p>
+        </section>
+        <section id="samples">
+        <sl class = "story">
+            The text of the story will be output in this area here.
+        </sl>
+        </section>
+        
+        
+        <!-- Or if they are trying to submit their own work, we give them the chance to do so -->
+        <?php
+        } elseif ($submitting) {
+        ?>
+            <section id="get-started">
+            <p>Thank you for contributing to our community!</p>
+            <a href="https://severe-fire-3252.herokuapp.com/" target="_top" class="button">View other stories</a>
+            </section>
+            
+            <section id="samples">
+            <sl class="submission">
+            <!-- Test code for submission form -->
+            <form action="upload_file.php" method="post" enctype="multipart/form-data">
+            <label for="file">Filename:</label>
+            <input type="file" name="file" id="file" />
+            <br />
+            <input type="submit" name="submit" value="Submit" />
+            </form>
+            </sl>
+            </samples>
+        
+        <!-- Otherwise we give them a chance to choose a story -->
+        <?php
+        } else {
+        ?>
+        <section id="get-started">
+      <p>Help us expand our community!</p>
+      <a href="https://severe-fire-3252.herokuapp.com/?submit=true" target="_top" class="button">Submit your own story</a>
+    </section>
 
     <section id="samples" class="clearfix">
-      <h1>Examples of the Facebook Graph API</h1>
+      <h1>Check out some of our stories:</h1>
+<!-- Immediately bellow is my addition for a story column -->
+<div class="list">
+        <h3>Most Popular Stories</h3> 
+        <sl class="friends">
+          <!-- Change for loop for our added top stories list -->
+          <?php
+            foreach ($friends as $friend) {
+              // Extract the pieces of info we need from the requests above
+              $id = idx($friend, 'id');
+              $name = idx($friend, 'name');
+          ?>
+          <sy>
+            <?php
+            $authorship = "\r\n by "
+            ?>
+            <a href = "https://severe-fire-3252.herokuapp.com/?read=true">
+            A Story
+            <?php echo he($authorship); ?>
+            an Author
+            </a>
+          </sy>
+          <?php
+            }
+          ?>
+          </sl>
+      </div>
+
+     <div class="list">
+        <h3>Newest Stories</h3> 
+        <sl class="friends">
+          <!-- Change for loop for our added top stories list -->
+          <?php
+            foreach ($friends as $friend) {
+              // Extract the pieces of info we need from the requests above
+              $id = idx($friend, 'id');
+              $name = idx($friend, 'name');
+          ?>
+          <sy>
+            <?php
+            $authorship = "\r\n by "
+            ?>
+            <a href = "https://severe-fire-3252.herokuapp.com/?read=true">
+            A Story
+            <?php echo he($authorship); ?>
+            an Author
+            </a>
+          </sy>
+          <?php
+            }
+          ?>
+          </sl>
+      </div>
 
       <div class="list">
-        <h3>A few of your friends</h3>
-        <ul class="friends">
+        <h3>Friends' Stories</h3> 
+        <sl class="friends">
+          <!-- Change for loop for our added top stories list -->
+          <?php
+            foreach ($friends as $friend) {
+              // Extract the pieces of info we need from the requests above
+              $id = idx($friend, 'id');
+              $name = idx($friend, 'name');
+          ?>
+          <sy>
+            <?php
+            $authorship = "\r\n by "
+            ?>
+            <a href = "https://severe-fire-3252.herokuapp.com/?read=true">
+            A Story
+            <?php echo he($authorship); ?>
+            an Author
+            </a>
+          </sy>
+          <?php
+            }
+          ?>
+          </sl>
+      </div>
+
+      <div class="list">
+        <h3>Your Stories</h3> 
+        <sl class="friends">
+          <!-- Change for loop for our added top stories list -->
+          <?php
+            foreach ($friends as $friend) {
+              // Extract the pieces of info we need from the requests above
+              $id = idx($friend, 'id');
+              $name = idx($friend, 'name');
+          ?>
+          <sy>
+            <?php
+            $authorship = "\r\n by "
+            ?>
+            <a href = "https://severe-fire-3252.herokuapp.com/?read=true">
+            A Story
+            <?php echo he($authorship); ?>
+            an Author
+            </a>
+          </sy>
+          <?php
+            }
+          ?>
+          </sl>
+      </div>
+    </section>
+
+
+
+
+        <section id="samples" class="clearfix">
+      <h1>Here are some of our authors:</h1>
+<!-- Immediately bellow is our author display section -->
+      <div class="list">
+        <h3>Popular Authors</h3> 
+        <ul class="friends"> 
           <?php
             foreach ($friends as $friend) {
               // Extract the pieces of info we need from the requests above
@@ -278,9 +443,9 @@ $app_name = idx($app_info, 'name', '');
           ?>
         </ul>
       </div>
-
+      
       <div class="list inline">
-        <h3>Recent photos</h3>
+        <h3>New Authors</h3>
         <ul class="photos">
           <?php
             $i = 0;
@@ -302,7 +467,7 @@ $app_name = idx($app_info, 'name', '');
       </div>
 
       <div class="list">
-        <h3>Things you like</h3>
+        <h3>Authors you Know</h3>
         <ul class="things">
           <?php
             foreach ($likes as $like) {
@@ -343,14 +508,31 @@ $app_name = idx($app_info, 'name', '');
           <?php
             }
           ?>
+          <?php
+            }
+          ?>
         </ul>
       </div>
     </section>
 
-    <?php
-      }
-    ?>
+    An app by Wing Kuang and Nick Kish.
 
+    <!-- This spot closes the "login needed" information and starts my changes for a "logout needed" area-->
+    <?php
+      } else { ?>
+    <section id="get-started">
+      <p>Welcome to LitShare:</p>
+      <p>a place for authors to share their short works.</p>
+    </section>
+    <section id="samples">
+        <sl class = "story">
+            We will put a description of our app in this space here.
+        </sl>
+        </section>
+
+    <?php } ?>
+    <!-- Anything after this point is shown both while logged in and while logged out (below the other information) -->
+    <!--
     <section id="guides" class="clearfix">
       <h1>Learn More About Heroku &amp; Facebook Apps</h1>
       <ul>
@@ -378,5 +560,6 @@ $app_name = idx($app_info, 'name', '');
         </li>
       </ul>
     </section>
+    -->
   </body>
 </html>
